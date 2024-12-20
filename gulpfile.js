@@ -23,7 +23,7 @@ function styles() {
         .pipe(concatCss("styles.css"))
         .pipe(cssmin())
         .pipe(rename({ suffix: '.min' }))
-        .pipe(dest('./dist/styles'));
+        .pipe(dest('./dist/src/styles'));
 }
 
 // Копирование и минификация JS
@@ -31,7 +31,7 @@ function scripts() {
     return src('./src/scripts/*.js')
         .pipe(uglify())
         .pipe(rename({ suffix: '.min' }))
-        .pipe(dest('./dist/scripts'));
+        .pipe(dest('./dist/src/scripts'));
 }
 
 // Копирование HTML и минификация
@@ -56,6 +56,8 @@ function copyDependencies() {
         'node_modules/slick-carousel/slick/slick.min.js',
         'node_modules/slick-carousel/slick/slick.css',
         'node_modules/slick-carousel/slick/slick-theme.css',
+        'node_modules/slick-carousel/slick/fonts//**/*',
+        'node_modules/slick-carousel/slick/ajax-loader.gif',
         'node_modules/magnific-popup/dist/jquery.magnific-popup.min.js',
         'node_modules/magnific-popup/dist/magnific-popup.css',
         'node_modules/animate.css/animate.min.css',
@@ -65,46 +67,39 @@ function copyDependencies() {
         .pipe(dest('./dist/libs'));
 }
 
-// Обновление путей в HTML
-// function updateHtmlPaths() {
-//     console.log('Обновление путей в HTML...');
-//     return src('./dist/index.html')  // Берем файл из папки dist
-//         .pipe(htmlReplace({
-//             'css': 'styles/styles.min.css', // Обновление пути к минифицированному стилю
-//             'js': 'scripts/script.min.js',  // Обновление пути к минифицированному JS
-//             'jquery-ui': 'libs/jquery-ui.min.css', // Путь к библиотеке jQuery UI CSS
-//             'slick': 'libs/slick.css', // Путь к библиотеке Slick CSS
-//             'slick-theme': 'libs/slick-theme.css', // Путь к библиотеке Slick Theme CSS
-//             'magnific-popup': 'libs/magnific-popup.css', // Путь к библиотеке Magnific Popup CSS
-//             'animate': 'libs/animate.min.css', // Путь к библиотеке Animate CSS
-//             'hover': 'libs/hover-min.css', // Путь к библиотеке Hover CSS
-//             'wow': 'libs/wow.min.js', // Путь к библиотеке WOW.js
-//         }))
-//         .pipe(dest('./dist'));
-// }
 
 function updateHtmlPaths() {
     return src('./dist/index.html')
-        .pipe(replace('href="node_modules/', 'href="libs/'))
-        .pipe(replace('src="node_modules/', 'src="libs/'))
-        .pipe(replace('href="src/styles/styles.less"', 'href="styles/styles.min.css"'))
-        .pipe(replace('src="src/scripts/less.js"', 'src="scripts/script.min.js"'))
-        .pipe(replace('src="src/scripts/script.js"', 'src="scripts/script.min.js"'))
+        .pipe(replace('src="src/scripts/less.js"', 'src="src/scripts/less.min.js"')) // заменяем только less.js
+        .pipe(replace('src="src/scripts/script.js"', 'src="src/scripts/script.min.js"')) // заменяем только script.js
+        .pipe(replace('href="src/styles/styles.less"', 'href="src/styles/styles.min.css"')) // заменяем путь к стилям
+        .pipe(replace('href="node_modules/', 'href="libs/')) // заменяем пути для node_modules
+        .pipe(replace('src="node_modules/', 'src="libs/')) // заменяем пути для node_modules
+        .pipe(htmlReplace({
+            js: [
+                'libs/jquery/dist/jquery.min.js',
+                'libs/jquery-ui/dist/jquery-ui.min.js',
+                'libs/slick-carousel/slick/slick.min.js',
+                'libs/magnific-popup/dist/jquery.magnific-popup.min.js',
+                'libs/wowjs/dist/wow.min.js',
+                'src/scripts/script.min.js' // Ваш скрипт подгружается последним
+            ]
+        }))
         .pipe(dest('./dist'));
 }
 
 // Наблюдение за изменениями
 function watchFiles() {
     watch('./src/styles/*.less', styles);
-    watch('./src/scripts/*.js', scripts);
     watch('./index.html', html);
     watch('./node_modules/**/*', copyDependencies);  // Наблюдение за изменениями в зависимостях
+    watch('./src/scripts/*.js', scripts);
 }
 
 // Сборка
 exports.default = series(
     clean,
-    parallel(styles, scripts, html, assets, copyDependencies),  // Добавлен копирование зависимостей в сборку
+    parallel(styles, html, assets, copyDependencies, scripts),  // Добавлен копирование зависимостей в сборку
     updateHtmlPaths  // Обновление путей в HTML в конце сборки
 );
 

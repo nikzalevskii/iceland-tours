@@ -10,8 +10,8 @@ $(document).ready(function () {
     })
     wow.init();
 
-    // Burger menu
-    $('#burger').click(function () {
+    // menu
+    $('#menu-adaptive').click(function () {
         $('#menu').addClass('open');
     })
 
